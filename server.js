@@ -1,17 +1,21 @@
-require('dotenv').config(); // Must be at the top
+import dotenv from 'dotenv';
+import express from 'express';
+import mongoose from 'mongoose';
+import { nanoid } from 'nanoid';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import Url from './models/Url.js';
 
-const express = require('express');
-const mongoose = require('mongoose');
-const path = require('path');
-const Url = require('./models/Url');
-const { nanoid } = require('nanoid');
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -19,10 +23,29 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
 // API to shorten URL
+// app.post('/api/shorten', async (req, res) => {
+//   const { url } = req.body;
+
+//   if (!url) {
+//     return res.status(400).json({ error: 'URL is required' });
+//   }
+
+//   const shortCode = nanoid(6);
+//   const newUrl = new Url({ originalUrl: url, shortCode });
+
+//   try {
+//     await newUrl.save();
+//     res.json({ shortUrl: `${req.protocol}://${req.get('host')}/${shortCode}` });
+//   } catch (err) {
+//     res.status(500).json({ error: 'Failed to save URL' });
+//   }
+// });
+
 app.post('/api/shorten', async (req, res) => {
   const { url } = req.body;
 
   if (!url) {
+    console.log("❌ Missing URL in request body");
     return res.status(400).json({ error: 'URL is required' });
   }
 
@@ -31,11 +54,15 @@ app.post('/api/shorten', async (req, res) => {
 
   try {
     await newUrl.save();
+    console.log(`✅ Saved: ${url} as ${shortCode}`);
     res.json({ shortUrl: `${req.protocol}://${req.get('host')}/${shortCode}` });
   } catch (err) {
+    console.error('❌ Error saving URL:', err);
     res.status(500).json({ error: 'Failed to save URL' });
   }
 });
+// API to get original URL
+
 
 // Redirect short URL
 app.get('/:shortCode', async (req, res) => {
@@ -53,7 +80,6 @@ app.get('/:shortCode', async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });

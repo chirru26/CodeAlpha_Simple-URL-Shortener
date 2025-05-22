@@ -16,11 +16,17 @@
   <script>
     async function shortenUrl() {
       const url = document.getElementById('urlInput').value;
-      const res = await fetch('/shorten', {
+      const res = await fetch('/api/shorten', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ originalUrl: url })
+        body: JSON.stringify({ url }) // ⬅ matches backend API expecting { url }
       });
+
+      if (!res.ok) {
+        document.getElementById('result').textContent = 'Failed to shorten URL.';
+        return;
+      }
+
       const data = await res.json();
       document.getElementById('result').innerHTML = `Short URL: <a href="${data.shortUrl}" target="_blank">${data.shortUrl}</a>`;
     }
